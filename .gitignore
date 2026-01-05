@@ -1,0 +1,112 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+*.log
+data/logs/
+logs/
+
+# Generated content
+data/output/
+data/analytics/
+*.pdf
+*.mp4
+*.png
+*.jpg
+*.jpeg
+*.md.backup
+
+# Social media logs
+social_log.json
+reddit_posts.json
+tweet_log.txt
+reddit_posts.txt
+users.txt
+product_urls.txt
+
+# Video files
+videos/
+video_stats.json
+videos_created.json
+
+# Automated config (generated)
+social_config.json
+video_config.json
+
+# Testing & verification (internal use only)
+VERIFICATION.md
+BUG_ANALYSIS.md
+verify_system.py
+
+# Artifacts (Gemini brain folder - not for repo)
+.gemini/
+
+# Backup files
+*.zip
+*.tar.gz
+*.bak
+ai_cash_system_backup.zip
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temp files
+temp/
+tmp/
+*.tmp
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Chrome driver
+chromedriver
+chromedriver.exe
+
+# Node modules (if using any JS tools)
+node_modules/
+
+# Keep these files
+!README.md
+!requirements.txt
+!.env.example
+!.gitignore
