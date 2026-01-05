@@ -1,0 +1,33 @@
+# 72-Hour AI Cash System Requirements
+# Install with: pip install -r requirements.txt
+
+# Core AI & Automation
+g4f==0.1.8.6  # Free GPT API
+openai==0.28.0  # Optional for paid API
+
+# Social Media Automation
+tweepy==4.14.0  # Twitter/X API
+praw==7.7.1  # Reddit API
+python-telegram-bot==20.3  # Telegram Bot API
+schedule==1.2.0  # Task scheduling
+
+# Video Creation
+moviepy==1.0.3  # Video editing
+Pillow==10.0.0  # Image processing
+numpy==1.24.3  # Required for moviepy
+
+# Web Automation
+selenium==4.14.0  # Browser automation
+webdriver-manager==4.0.1  # Auto driver management
+beautifulsoup4==4.12.2  # HTML parsing
+requests==2.31.0  # HTTP requests
+
+# Data & Monitoring
+pandas==2.1.1  # Data analysis
+matplotlib==3.8.0  # Charts and graphs
+python-dotenv==1.0.0  # Environment variables
+
+# Utilities
+pyyaml==6.0.1  # YAML configs
+colorama==0.4.6  # Colored terminal output
+tqdm==4.66.1  # Progress bars
