@@ -1,0 +1,74 @@
+{
+  "men_lust": {
+    "title": "Alpha Male AI: Psychology of Attraction Mastery",
+    "chapters": [
+      "The Science of Attraction",
+      "AI-Powered Dating",
+      "Confidence Algorithms",
+      "Social Proof Engineering"
+    ],
+    "target_audience": "Men seeking dating and attraction advice",
+    "price": 27,
+    "keywords": ["dating", "attraction", "confidence", "psychology", "relationships"]
+  },
+  "women_beauty": {
+    "title": "AI Beauty OS: Automated Glamour System",
+    "chapters": [
+      "Skin Care Automation",
+      "Style Algorithm",
+      "Beauty Routine AI",
+      "Confidence Protocol"
+    ],
+    "target_audience": "Women interested in beauty and self-improvement",
+    "price": 27,
+    "keywords": ["beauty", "skincare", "makeup", "style", "self-care"]
+  },
+  "rich_time": {
+    "title": "Time Billionaire: AI-Powered Productivity",
+    "chapters": [
+      "Time Auditing AI",
+      "Automation Stack",
+      "Delegation Matrix",
+      "Focus Optimization"
+    ],
+    "target_audience": "Professionals and entrepreneurs",
+    "price": 27,
+    "keywords": ["productivity", "time management", "automation", "efficiency", "success"]
+  },
+  "parents_peace": {
+    "title": "Peaceful Parenting: AI Nanny System",
+    "chapters": [
+      "Tantrum Predictor",
+      "Educational Game AI",
+      "Routine Optimizer",
+      "Stress Management"
+    ],
+    "target_audience": "Parents seeking easier parenting solutions",
+    "price": 27,
+    "keywords": ["parenting", "kids", "family", "education", "stress relief"]
+  },
+  "kids_dreams": {
+    "title": "DreamBuilder AI: Custom Adventure Creator",
+    "chapters": [
+      "Story Generator",
+      "Educational Games",
+      "Creativity Engine",
+      "Goal Visualizer"
+    ],
+    "target_audience": "Parents and educators",
+    "price": 27,
+    "keywords": ["kids", "education", "creativity", "learning", "development"]
+  },
+  "poor_hope": {
+    "title": "Hope Economy: $0 to $5000 in 72 Hours",
+    "chapters": [
+      "Mindset Reset",
+      "Skill Stacking",
+      "Micro-Service AI",
+      "Profit Multiplication"
+    ],
+    "target_audience": "People seeking financial improvement",
+    "price": 27,
+    "keywords": ["money", "finance", "side hustle", "income", "entrepreneurship"]
+  }
+}

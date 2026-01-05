@@ -1,0 +1,188 @@
+"""
+AI-Powered eBook Generator
+Generates complete ebooks using GPT models (g4f or OpenAI)
+"""
+import os
+import sys
+import argparse
+from pathlib import Path
+
+# Add parent directory to path
+sys.path.append(str(Path(__file__).parent.parent))
+
+import g4f
+from utils.logger import get_logger
+from utils.helpers import load_niches, sanitize_filename
+
+logger = get_logger("ebook_generator")
+
+class EbookGenerator:
+    def __init__(self, niches_config=None, output_dir="data/output"):
+        self.niches = niches_config or load_niches()
+        self.output_dir = Path(output_dir)
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        logger.info("EbookGenerator initialized")
+    
+    def generate_chapter(self, chapter_title, book_title, niche):
+        """Generate a single chapter using AI"""
+        prompt = f"""Write a comprehensive 2000-word chapter about '{chapter_title}' for the ebook '{book_title}'.
+
+Context: This is for people interested in {niche.replace('_', ' ')}.
+
+Requirements:
+- Make it practical and actionable with step-by-step instructions
+- Include specific AI tools and free resources
+- Use real-world examples
+- Write in an engaging, conversational tone
+- Include tips, warnings, and pro advice sections
+- Format with proper headings and bullet points
+
+Write the complete chapter now:"""
+        
+        logger.info(f"Generating chapter: {chapter_title}")
+        
+        try:
+            # Use g4f for free GPT-4 access
+            response = g4f.ChatCompletion.create(
+                model=g4f.models.gpt_4,
+                messages=[{"role": "user", "content": prompt}],
+                stream=False
+            )
+            
+            logger.success(f"Generated chapter: {chapter_title}")
+            return response
+            
+        except Exception as e:
+            logger.error(f"Failed to generate chapter '{chapter_title}': {e}")
+            # Fallback content
+            return self._generate_fallback_chapter(chapter_title, book_title)
+    
+    def _generate_fallback_chapter(self, chapter_title, book_title):
+        """Generate fallback content if AI fails"""
+        return f"""## {chapter_title}
+
+This chapter covers essential concepts about {chapter_title.lower()}.
+
+### Introduction
+
+In this chapter, we'll explore the fundamental principles and practical applications of {chapter_title.lower()}. This is a crucial component of {book_title}.
+
+### Key Concepts
+
+1. **Foundation**: Understanding the basics
+2. **Application**: Putting knowledge into practice  
+3. **Optimization**: Improving your results
+4. **Automation**: Scaling your efforts with AI
+
+### Step-by-Step Implementation
+
+**Step 1**: Start with research and planning
+**Step 2**: Choose the right tools for your needs
+**Step 3**: Implement the system incrementally
+**Step 4**: Monitor results and optimize
+
+### AI Tools & Resources
+
+- ChatGPT: For content creation and problem-solving
+- Notion AI: For organization and planning
+- Zapier: For automation workflows
+- Various free alternatives available online
+
+### Pro Tips
+
+💡 **Tip**: Start small and scale gradually
+⚠️ **Warning**: Avoid common pitfalls by learning from others
+🚀 **Advanced**: Consider premium tools once you've mastered the basics
+
+### Summary
+
+{chapter_title} is essential for success with {book_title}. By following these principles and using the right tools, you can achieve remarkable results.
+
+---
+"""
+    
+    def generate_ebook(self, niche, details):
+        """Generate complete ebook for a niche"""
+        logger.info(f"Starting ebook generation for: {niche}")
+        
+        title = details['title']
+        chapters = details['chapters']
+        
+        # Start with title and intro
+        content = f"# {title}\n\n"
+        content += f"*An AI-Powered System for {niche.replace('_', ' ').title()}*\n\n"
+        content += "---\n\n"
+        
+        # Table of Contents
+        content += "## Table of Contents\n\n"
+        for i, chapter in enumerate(chapters, 1):
+            content += f"{i}. {chapter}\n"
+        content += "\n---\n\n"
+        
+        # Generate each chapter
+        for i, chapter in enumerate(chapters, 1):
+            logger.info(f"Generating chapter {i}/{len(chapters)}: {chapter}")
+            chapter_content = self.generate_chapter(chapter, title, niche)
+            content += f"# Chapter {i}: {chapter}\n\n"
+            content += chapter_content + "\n\n"
+            content += "---\n\n"
+        
+        # Add conclusion
+        content += "# Conclusion\n\n"
+        content += f"Thank you for reading {title}. "
+        content += "By implementing the strategies and tools outlined in this ebook, "
+        content += "you'll be well-equipped to achieve your goals.\n\n"
+        content += "Remember: The key to success is taking action. Start implementing today!\n\n"
+        content += "---\n\n"
+        content += "*Generated by the 72-Hour AI Cash System*\n"
+        
+        # Save to file
+        filename = f"{sanitize_filename(niche)}_ebook.md"
+        filepath = self.output_dir / filename
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(content)
+        
+        word_count = len(content.split())
+        logger.success(f"Generated: {filename} ({word_count:,} words)")
+        
+        return str(filepath)
+    
+    def generate_all(self):
+        """Generate all ebooks for all niches"""
+        logger.info(f"Generating {len(self.niches)} ebooks...")
+        
+        generated_files = []
+        for niche, details in self.niches.items():
+            try:
+                filepath = self.generate_ebook(niche, details)
+                generated_files.append(filepath)
+            except Exception as e:
+                logger.error(f"Failed to generate ebook for {niche}: {e}")
+        
+        logger.success(f"Generated {len(generated_files)} ebooks")
+        return generated_files
+
+def main():
+    parser = argparse.ArgumentParser(description='Generate AI-powered ebooks')
+    parser.add_argument('--niches', type=str, help='Space-separated niche names')
+    parser.add_argument('--all', action='store_true', help='Generate all niches')
+    parser.add_argument('--test-mode', action='store_true', help='Test mode with fallback content')
+    
+    args = parser.parse_args()
+    
+    generator = EbookGenerator()
+    
+    if args.all or not args.niches:
+        generator.generate_all()
+    else:
+        # Generate specific niches only
+        niche_list = args.niches.split()
+        for niche in niche_list:
+            if niche in generator.niches:
+                generator.generate_ebook(niche, generator.niches[niche])
+            else:
+                logger.warning(f"Unknown niche: {niche}")
+
+if __name__ == "__main__":
+    main()

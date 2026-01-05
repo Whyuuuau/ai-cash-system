@@ -1,0 +1,52 @@
+# System Configuration
+system:
+  target_revenue: 5000
+  deadline_hours: 72
+  challenge_mode: true
+
+# API Configuration (loaded from .env for security)
+api:
+  openai_enabled: false # Set to true if you have OpenAI API key
+  use_g4f: true # Use free GPT-4 alternative
+  stability_ai_enabled: false # For image generation
+
+# Social Media Automation
+social_media:
+  twitter:
+    enabled: true
+    post_interval_minutes: 30
+    max_posts_per_day: 48
+
+  reddit:
+    enabled: true
+    post_interval_hours: 12
+    value_first: true # Focus on providing value
+
+  telegram:
+    enabled: true
+    auto_delivery: false # Manual verification recommended
+
+# Product Configuration
+products:
+  base_price: 27
+  bundle_price: 97
+  emergency_price: 1 # Pay what you want minimum
+
+# Monitoring & Optimization
+monitoring:
+  check_interval_hours: 1
+  emergency_threshold_hours: 24
+  low_performance_threshold: 0.3 # 30% of target
+
+# Emergency Protocol
+emergency:
+  activate_at_hours_remaining: 24
+  bundle_discount: 0.5 # 50% off
+  affiliate_commission: 1.0 # 100% commission
+  pwyw_minimum: 1
+
+# Output Paths
+paths:
+  output_dir: "data/output"
+  logs_dir: "data/logs"
+  analytics_dir: "data/analytics"
