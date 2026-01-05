@@ -191,7 +191,54 @@ class SalesTracker:
         product, price = random.choice(products)
         return self.add_sale(product, price, source='simulated')
     
+    
+    def auto_sync_from_payments(self):
+        """Auto-sync sales from payment platforms"""
+        try:
+            from automation.payment_integration import PaymentIntegration
+            
+            integration = PaymentIntegration()
+            
+            if not integration.platforms:
+                logger.warning("No payment platforms configured for auto-sync")
+                return 0
+            
+            logger.info("Syncing sales from payment platforms...")
+            
+            #Get last sync time or last 24 hours
+            since = datetime.now() - timedelta(hours=24)
+            
+            # Fetch all sales
+            sales = integration.fetch_all_sales(since=since)
+            
+            new_sales = 0
+            for sale in sales:
+                # Check if sale already recorded (by ID or timestamp)
+                sale_id = sale.get('id')
+                if sale_id and any(s.get('sale_id') == sale_id for s in self.sales):
+                    continue  # Skip duplicates
+                
+                # Add to tracker
+                sale_record = self.add_sale(
+                    product=sale['product'],
+                    amount=sale['amount'],
+                    source=f"{sale['platform']}_api"
+                )
+                sale_record['sale_id'] = sale_id  # Add ID for deduplication
+                new_sales += 1
+            
+            logger.success(f"Synced {new_sales} new sales from payment platforms")
+            return new_sales
+            
+        except ImportError:
+            logger.warning("Payment integration not available")
+            return 0
+        except Exception as e:
+            logger.error(f"Auto-sync failed: {e}")
+            return 0
+    
     def run_monitoring_loop(self, check_interval_hours=1):
+
         """Run continuous monitoring"""
         logger.info("Starting monitoring loop...")
         
