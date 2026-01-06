@@ -3,6 +3,13 @@ Social Media Automation for 72-Hour Cash System
 Automates posting to Twitter, Reddit, Telegram
 """
 
+import os
+import sys
+from pathlib import Path
+
+# Add parent directory to path
+sys.path.append(str(Path(__file__).parent.parent))
+
 import tweepy
 import praw
 import telebot
@@ -10,10 +17,14 @@ import schedule
 import time
 import random
 import json
-import os
 from datetime import datetime, timedelta
 from typing import List, Dict
 import threading
+
+from utils.logger import get_logger
+from utils.helpers import load_niches, load_config
+
+logger = get_logger("social_automation")
 
 class SocialAutomation:
     def __init__(self, config_file="social_config.json"):

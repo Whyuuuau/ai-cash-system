@@ -4,6 +4,12 @@ Creates short videos for TikTok/Instagram/YouTube Shorts
 """
 
 import os
+import sys
+from pathlib import Path
+
+# Add parent directory to path
+sys.path.append(str(Path(__file__).parent.parent))
+
 import random
 import textwrap
 import time
@@ -11,6 +17,11 @@ from datetime import datetime
 from typing import List, Dict
 import subprocess
 import json
+
+from utils.logger import get_logger
+from utils.helpers import load_niches
+
+logger = get_logger("video_maker")
 
 try:
     from moviepy.editor import *

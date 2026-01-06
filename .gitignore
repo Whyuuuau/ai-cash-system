@@ -73,6 +73,9 @@ video_config.json
 VERIFICATION.md
 BUG_ANALYSIS.md
 PAYMENT_INTEGRATION_REPORT.md
+INTEGRATION_ANALYSIS.md
+FILE_COMPARISON.md
+STATUS.md
 verify_system.py
 
 # Artifacts (Gemini brain folder - not for repo)
@@ -98,6 +101,11 @@ tmp/
 *.db
 *.sqlite
 *.sqlite3
+
+# Duplicate files (should be in folders)
+/ebook_generator.py
+/social_automation.py  
+/video_maker.py
 
 # Chrome driver
 chromedriver
