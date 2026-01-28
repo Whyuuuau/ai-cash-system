@@ -1,0 +1,80 @@
+{
+  "men_lust": {
+    "role": "You are an expert ghostwriter specializing in creating high-quality, publishable nonfiction content. Your writing is engaging, authoritative, and provides genuine value to readers.",
+    "content": "write me a 25000 words book about men lust.",
+    "title": "Men Lust",
+    "price": 27,
+    "keywords": [
+      "dating",
+      "attraction",
+      "confidence",
+      "psychology",
+      "relationships"
+    ]
+  },
+  "rich_time": {
+    "role": "You are an expert ghostwriter specializing in creating high-quality, publishable nonfiction content. Your writing is engaging, authoritative, and provides genuine value to readers.",
+    "content": "write me a 25000 words book about rich time.",
+    "title": "Rich Time",
+    "price": 27,
+    "keywords": [
+      "productivity",
+      "time management",
+      "entrepreneurship",
+      "success",
+      "wealth"
+    ]
+  },
+  "parents_peace": {
+    "role": "You are an expert ghostwriter specializing in creating high-quality, publishable nonfiction content. Your writing is engaging, authoritative, and provides genuine value to readers.",
+    "content": "write me a 25000 words book about parents peace.",
+    "title": "Parents Peace",
+    "price": 27,
+    "keywords": [
+      "dating",
+      "attraction",
+      "confidence",
+      "psychology",
+      "relationships"
+    ]
+  },
+  "kids_dreams": {
+    "role": "You are an expert ghostwriter specializing in creating high-quality, publishable nonfiction content. Your writing is engaging, authoritative, and provides genuine value to readers.",
+    "content": "write me a 25000 words book about kid's dreams.",
+    "title": "Kids Dreams",
+    "price": 27,
+    "keywords": [
+      "dating",
+      "attraction",
+      "confidence",
+      "psychology",
+      "relationships"
+    ]
+  },
+  "poor_hope": {
+    "role": "You are an expert ghostwriter specializing in creating high-quality, publishable nonfiction content. Your writing is engaging, authoritative, and provides genuine value to readers.",
+    "content": "write me a 25000 words book about poor hope.",
+    "title": "Poor Hope",
+    "price": 27,
+    "keywords": [
+      "side hustle",
+      "make money online",
+      "financial freedom",
+      "entrepreneurship",
+      "success"
+    ]
+  },
+  "women_beauty": {
+    "role": "You are an expert ghostwriter specializing in creating high-quality, publishable nonfiction content. Your writing is engaging, authoritative, and provides genuine value to readers.",
+    "content": "write me a 25000 words book about women beauty.",
+    "title": "Women Beauty",
+    "price": 27,
+    "keywords": [
+      "beauty",
+      "skincare",
+      "makeup",
+      "hair",
+      "fashion"
+    ]
+  }
+}

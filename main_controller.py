@@ -8,6 +8,7 @@ import argparse
 from pathlib import Path
 from datetime import datetime, timedelta
 import time
+import json
 
 # Setup path
 sys.path.append(str(Path(__file__).parent))
@@ -19,8 +20,17 @@ from modules.image_generator import ImageGenerator
 from modules.pdf_converter import PDFConverter
 from modules.landing_generator import LandingPageGenerator
 from modules.video_maker import VideoMaker
-from automation.social_automation import SocialAutomation
-from automation.telegram_bot import TelegramBot
+
+try:
+    from automation.social_automation import SocialAutomation
+except ImportError:
+    SocialAutomation = None
+
+try:
+    from automation.telegram_bot import TelegramBot
+except ImportError:
+    TelegramBot = None
+
 from monitoring.sales_tracker import SalesTracker
 from monitoring.emergency import EmergencyProtocol
 
@@ -58,34 +68,115 @@ class MainController:
         
         print("\n🏭 PHASE 1: CONTENT PRODUCTION")
         print("="*60)
-        print("Goal: Generate all 6 ebooks, covers, PDFs, and landing pages")
+        print("Goal: Generate ebooks, covers, PDFs, and landing pages")
         print("="*60 + "\n")
+
+        # Determine source of niches
+        niches_to_process = []
         
-        # Step 1: Generate ebooks
-        print("\n📚 Step 1: Generating eBooks...")
-        ebook_files = self.ebook_gen.generate_all()
-        logger.success(f"Generated {len(ebook_files)} ebooks")
-        
-        # Step 2: Generate covers
-        print("\n🎨 Step 2: Generating cover images...")
-        cover_files = self.image_gen.generate_all(use_api=False)
-        logger.success(f"Generated {len(cover_files)} covers")
-        
-        # Step 3: Convert to PDF
-        print("\n📄 Step 3: Converting to PDFs...")
-        pdf_files = self.pdf_conv.convert_all()
-        logger.success(f"Generated {len(pdf_files)} PDFs")
-        
-        # Step 4: Generate landing pages
-        print("\n🌐 Step 4: Generating landing pages...")
-        landing_files = self.landing_gen.generate_all()
-        logger.success(f"Generated {len(landing_files)} landing pages")
-        
+        # 1. Check prompts.json (via ebook_gen.niches)
+        if self.ebook_gen.niches:
+            print(f"📂 Found {len(self.ebook_gen.niches)} niches in prompts.json")
+            for key, data in self.ebook_gen.niches.items():
+                data['key'] = key
+                niches_to_process.append(data)
+        else:
+            # 2. Dynamic Discovery (Fallback)
+            print("🤖 No prompts.json found. Analyzing market trends with OpenRouter...")
+            try:
+                if not self.ebook_gen.ai_client:
+                     raise Exception("OpenRouter client not initialized")
+
+                prompt = """
+                Generate 3 profitable, trending ebook ideas for 2026.
+                Return STRICTLY a JSON array of objects.
+                Each object must have: key, title, target_audience, role, content.
+                """
+
+                response = self.ebook_gen.ai_client.create_chat_completion(
+                    model="deepseek/deepseek-r1-0528:free",
+                    messages=[
+                        {"role": "system", "content": "You are a market research expert. Output strictly properly formatted JSON."},
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+
+                if response and "choices" in response:
+                    content_str = response["choices"][0]["message"]["content"]
+                    
+                    # Clean think tags
+                    if "<think>" in content_str:
+                        content_str = content_str.split("</think>")[-1]
+                    
+                    content_str = content_str.strip()
+                    try:
+                        start_idx = content_str.find('[')
+                        end_idx = content_str.rfind(']')
+                        if start_idx != -1 and end_idx != -1:
+                            content_str = content_str[start_idx:end_idx+1]
+                        niches_to_process = json.loads(content_str)
+                    except:
+                        pass
+            except Exception as e:
+                logger.error(f"Dynamic discovery failed: {e}")
+                
+        # 3. Fallback Hardcoded
+        if not niches_to_process:
+             print("⚠️  Using default fallback niches.")
+             niches_to_process = [
+                {
+                    "key": "ai_wealth_2026", 
+                    "title": "AI Wealth 2026", 
+                    "content": "Write a guide on AI wealth creation."
+                }
+             ]
+
+        print(f"✅ Processing {len(niches_to_process)} items...\n")
+
+        # Iterate over each niche
+        for i, niche_data in enumerate(niches_to_process, 1):
+            key = niche_data.get('key', f"niche_{i}")
+            title = niche_data.get('title', "Untitled Ebook")
+            
+            print(f"👉 Processing Item {i}/{len(niches_to_process)}: {title}")
+            print("-" * 40)
+            
+            # Ensure it's in ebook_gen.niches so methods work
+            self.ebook_gen.niches[key] = niche_data
+            
+            # Step 1: Generate Ebook
+            print("   📚 Step 1: Generating eBook content...")
+            markdown_content = self.ebook_gen.create_ebook_markdown(key)
+            ebook_path = self.ebook_gen.save_ebook(key, markdown_content)
+            logger.success(f"Generated ebook: {ebook_path}")
+            
+            # Step 2: Generate Cover
+            print("   🎨 Step 2: Generating cover...")
+            cover_path = self.image_gen.generate_cover(key, title, use_api=False)
+            logger.success(f"Generated cover: {cover_path}")
+            
+            # Step 3: Convert to PDF
+            print("   📄 Step 3: Converting to PDF...")
+            pdf_path = self.pdf_conv.markdown_to_pdf(ebook_path, cover_path)
+            logger.success(f"Generated PDF: {pdf_path}")
+            
+            # Step 4: Generate Landing Page
+            print("   🌐 Step 4: Generating landing page...")
+            landing_path = self.landing_gen.generate_landing_page(
+                key, 
+                title, 
+                product_url=f"https://gumroad.com/l/{key}",
+                price=niche_data.get('price', 27)
+            )
+            logger.success(f"Generated landing page: {landing_path}")
+            
+            print(f"   ✅ Completed {title}\n")
+            
+            # Sleep briefly to be nice to APIs
+            time.sleep(2)
+
         print("\n✅ PHASE 1 COMPLETE!")
-        print(f"   • Ebooks: {len(ebook_files)}")
-        print(f"   • Covers: {len(cover_files)}")
-        print(f"   • PDFs: {len(pdf_files)}")
-        print(f"   • Landing Pages: {len(landing_files)}")
+        print(f"Generated {len(niches_to_process)} complete products.")
         print("\n⏭️  Next: Upload PDFs to Gumroad manually")
         print("   Then proceed to Phase 2\n")
         
@@ -158,19 +249,25 @@ class MainController:
         
         # Check social media config
         try:
-            self.social_auto = SocialAutomation()
-            print("✅ Social automation configured")
+            if SocialAutomation:
+                self.social_auto = SocialAutomation()
+                print("✅ Social automation configured")
+            else:
+                print("⚠️  Social automation module not available")
         except Exception as e:
             print(f"⚠️  Social automation: {e}")
             config_ok = False
         
         # Check Telegram bot
         try:
-            self.telegram_bot = TelegramBot()
-            if self.telegram_bot.bot:
-                print("✅ Telegram bot configured")
+            if TelegramBot:
+                self.telegram_bot = TelegramBot()
+                if self.telegram_bot.bot:
+                    print("✅ Telegram bot configured")
+                else:
+                    print("⚠️  Telegram bot not configured")
             else:
-                print("⚠️  Telegram bot not configured")
+                print("⚠️  Telegram bot module not available")
         except Exception as e:
             print(f"⚠️  Telegram bot: {e}")
         

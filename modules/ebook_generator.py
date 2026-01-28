@@ -10,7 +10,11 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent.parent))
 
-import g4f  # Free GPT API
+from modules.open_router import OpenRouter
+from modules.open_router import OpenRouter
+from modules.pdf_converter import PDFConverter
+from modules.image_generator import ImageGenerator
+import argparse
 import json
 import random
 import time
@@ -23,123 +27,43 @@ logger = get_logger("ebook_generator")
 
 class EbookGenerator:
     def __init__(self, niches_config=None, output_dir="data/output"):
-        self.niches = niches_config or load_niches()
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.generated_files = []
         logger.info("EbookGenerator initialized with utils integration")
-        
-        # Keep original niches as fallback if load_niches fails
-        if not self.niches:
-            self.niches = {
-            "men_lust": {
-                "title": "Alpha Male AI: Psychology of Attraction Mastery",
-                "chapters": [
-                    "The Neuroscience of Attraction - Rewiring Your Brain",
-                    "AI-Powered Dating Scripts That Actually Work", 
-                    "Confidence Algorithms for Social Success",
-                    "Social Proof Engineering in Digital Age",
-                    "Body Language Decoded by Computer Vision",
-                    "Voice Modulation AI for Magnetic Presence",
-                    "Text Game Automation with ChatGPT",
-                    "Lifestyle Design Through Data Analytics",
-                    "Wealth Signaling in Social Media Era",
-                    "The 72-Hour Charisma Transformation"
-                ],
-                "price": 27,
-                "target": "Men aged 20-45 seeking dating success"
-            },
-            "women_beauty": {
-                "title": "AI Beauty OS: Automated Glamour System",
-                "chapters": [
-                    "Skin Analysis AI - Beyond Human Eye",
-                    "Automated Makeup Routine Generator",
-                    "Fashion Algorithm for Your Body Type",
-                    "Hair Style AI Recommender System",
-                    "Nutrition Plan via Image Recognition",
-                    "Workout Optimization with Motion AI",
-                    "Confidence Protocol Through Self-Talk AI",
-                    "Social Media Presence Enhancer",
-                    "Beauty Product Recommender Engine",
-                    "The 7-Day Digital Glow Up"
-                ],
-                "price": 27,
-                "target": "Women seeking beauty enhancement through tech"
-            },
-            "rich_time": {
-                "title": "Time Billionaire: AI-Powered Productivity System",
-                "chapters": [
-                    "Time Auditing AI - Find Your Hidden Hours",
-                    "Automation Stack for Passive Income",
-                    "Delegation Matrix to Virtual Assistants",
-                    "Focus Optimization with Brainwave Tech",
-                    "Email Management Through GPT",
-                    "Meeting Efficiency Algorithm",
-                    "Decision Fatigue Reduction System",
-                    "Energy Management via Wearable Data",
-                    "Wealth Acceleration Time Blocks",
-                    "The 4-Hour AI Workweek Blueprint"
-                ],
-                "price": 47,
-                "target": "Entrepreneurs and professionals"
-            },
-            "parents_peace": {
-                "title": "Peaceful Parenting: AI Nanny System",
-                "chapters": [
-                    "Tantrum Predictor - AI Early Warning System",
-                    "Educational Game Generator Based on Child's Interest",
-                    "Routine Optimizer for Harmonious Home",
-                    "Stress Management Through Biofeedback",
-                    "Screen Time Balance Algorithm",
-                    "Nutrition Planner for Picky Eaters",
-                    "Sleep Pattern Analyzer and Optimizer",
-                    "Educational Content Curator AI",
-                    "Parent-Child Bonding Activity Generator",
-                    "The Calm Home Operating System"
-                ],
-                "price": 27,
-                "target": "Parents overwhelmed with daily chaos"
-            },
-            "kids_dreams": {
-                "title": "DreamBuilder AI: Custom Adventure Creator",
-                "chapters": [
-                    "Personalized Story Generator Engine",
-                    "Educational Game Maker for Any Subject",
-                    "Creativity Engine - Infinite Art Ideas",
-                    "Goal Visualizer with Progress Tracking",
-                    "Career Explorer Through Role-Play AI",
-                    "Social Skills Simulator for Shy Kids",
-                    "Homework Helper with Step-by-Step AI",
-                    "Hobby Recommender Based on Personality",
-                    "Dream Journal with AI Interpretation",
-                    "The Imagination Amplifier System"
-                ],
-                "price": 27,
-                "target": "Children and parents seeking educational fun"
-            },
-            "poor_hope": {
-                "title": "Hope Economy: $0 to $5000 in 72 Hours",
-                "chapters": [
-                    "Mindset Reset - From Scarcity to Abundance",
-                    "Skill Stacking for Maximum Market Value",
-                    "Micro-Service AI - Small Tasks, Big Money",
-                    "Profit Multiplication Through Automation",
-                    "Digital Product Creation in 24 Hours",
-                    "Social Proof Generation Algorithm",
-                    "Client Acquisition Funnel AI",
-                    "Pricing Psychology for Maximum Yield",
-                    "Scaling Systems Without Investment",
-                    "The Escape Velocity Financial Plan"
-                ],
-                "price": 27,
-                "target": "People in financial distress seeking hope"
-            }
-        }
+
+        # Load prompt configs as the primary source of truth
+        self.niches = {}
+        try:
+            prompts_path = Path("config/prompts.json")
+            if prompts_path.exists():
+                with open(prompts_path, "r", encoding="utf-8") as f:
+                    self.niches = json.load(f)
+                    logger.info(f"Loaded {len(self.niches)} prompts from prompts.json")
+            else:
+                logger.error("prompts.json not found in config directory")
+        except Exception as e:
+            logger.error(f"Failed to load prompts.json: {e}")
+
+        # Initialize OpenRouter
+        try:
+            self.ai_client = OpenRouter()
+        except:
+            logger.warning("OpenRouter client failed to initialize (check API key)")
+            self.ai_client = None
+
     
     def generate_chapter_content(self, niche, chapter_title, word_count=1500):
-        """Generate chapter content using free GPT API"""
+        """Generate chapter content using OpenRouter API"""
         
-        prompt = f"""Write a detailed chapter about "{chapter_title}" for an ebook titled "{self.niches[niche]['title']}".
+        prompt_config = self.prompt_configs.get(niche, {})
+        system_role = prompt_config.get("role", "You are an expert ghostwriter.")
+        base_content = prompt_config.get("content", "")
+        
+        prompt = f"""
+        {base_content}
+        
+        Write a detailed chapter about "{chapter_title}" for an ebook titled "{self.niches[niche]['title']}".
         
         Requirements:
         1. Make it practical and actionable
@@ -147,7 +71,7 @@ class EbookGenerator:
         3. Mention specific FREE AI tools (ChatGPT, Bing AI, Canva, etc.)
         4. Include real examples and case studies
         5. Write in engaging, conversational tone
-        6. Target audience: {self.niches[niche]['target']}
+        6. Target audience: {self.niches[niche].get('target', self.niches[niche].get('target_audience', 'General Audience'))}
         7. Word count: Approximately {word_count} words
         8. Include actionable takeaways at the end
         
@@ -163,29 +87,221 @@ class EbookGenerator:
         Make it valuable enough that someone would pay $27 for this information."""
         
         try:
-            # Using g4f for free GPT access
-            response = g4f.ChatCompletion.create(
-                model=g4f.models.gpt_4,
-                messages=[{"role": "user", "content": prompt}],
-                stream=False
+            if not self.ai_client:
+                 raise Exception("OpenRouter client not initialized")
+
+            # Using OpenRouter
+            logger.info(f"Calling OpenRouter for chapter: {chapter_title}")
+            response = self.ai_client.create_chat_completion(
+                model="deepseek/deepseek-r1-0528:free",
+                messages=[
+                    {"role": "system", "content": system_role},
+                    {"role": "user", "content": prompt}
+                ]
             )
             
-            return response
+            if response and "choices" in response and len(response["choices"]) > 0:
+                return response["choices"][0]["message"]["content"]
+            else:
+                logger.error(f"OpenRouter returned invalid response: {response}")
+                raise Exception("Empty response from OpenRouter")
             
         except Exception as e:
             logger.error(f"Error generating content: {e}")
             # Fallback content
             return f"# {chapter_title}\n\nThis chapter covers {chapter_title} in detail. Due to API limits, content generation is simplified. In the full version, this would include step-by-step instructions, AI tools, and practical examples."
     
+    def generate_outline(self, topic_prompt):
+        """Generate a chapter outline for the book"""
+        logger.info(f"Generating outline for: {topic_prompt}")
+        
+        prompt = f"""
+        {topic_prompt}
+        
+        Based on the request above, create a comprehensive outline for a 25,000 word book.
+        Return strictly a JSON list of strings, where each string is a chapter title.
+        The list should have at least 15 chapters to ensure enough length.
+        Example: ["Introduction to...", "The Psychology of...", "Advanced Techniques...", ...]
+        Do not include any explanation, just the JSON array.
+        """
+        
+        try:
+            response = self.ai_client.create_chat_completion(
+                model="deepseek/deepseek-r1-0528:free",
+                messages=[
+                    {"role": "system", "content": "You are a professional book outliner. Output strictly valid JSON."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            if response and "choices" in response:
+                content = response["choices"][0]["message"]["content"]
+                if "<think>" in content:
+                    content = content.split("</think>")[-1]
+                content = content.strip()
+                
+                # Extract JSON list
+                start = content.find('[')
+                end = content.rfind(']')
+                if start != -1 and end != -1:
+                    content = content[start:end+1]
+                    return json.loads(content)
+            
+            # Fallback outline if parsing fails
+            return [f"Chapter {i}: Detailed Analysis" for i in range(1, 16)]
+            
+        except Exception as e:
+            logger.error(f"Error generating outline: {e}")
+            return [f"Section {i}" for i in range(1, 11)]
+
+    def generate_book_directly(self, niche, filepath=None):
+        """Generate entire book using recursive generation (Outline -> Chapters)"""
+        details = self.niches[niche]
+        prompt_content = details.get("content", "")
+        title = details.get("title", niche)
+        
+        logger.info(f"Generating book '{title}' via recursive outline method...")
+        
+        # 1. Generate Outline
+        chapters = self.generate_outline(prompt_content)
+        logger.info(f"Generated outline with {len(chapters)} chapters")
+        
+        full_content = ""
+        
+        # 2. Generate content for each chapter
+        for i, chapter_title in enumerate(chapters, 1):
+            logger.info(f"Writing chapter {i}/{len(chapters)}: {chapter_title}")
+            
+            chapter_prompt = f"""
+            Write a comprehensive, detailed chapter titled "{chapter_title}".
+            This is part of a book about: {details.get('title', 'this topic')}.
+            
+            Requirements:
+            - Write at least 2000 words.
+            - Go extremely deep into details.
+            - Provide actionable steps, examples, and psychological insights.
+            - Do not include "Chapter X" in headings, just use the title.
+            - Write in a flowing, engaging style.
+            """
+            
+            retry_count = 0
+            chapter_text = ""
+            
+            while retry_count < 3:
+                try:
+                    response = self.ai_client.create_chat_completion(
+                        model="deepseek/deepseek-r1-0528:free",
+                        messages=[
+                            {"role": "system", "content": details.get("role", "You are an expert author.")},
+                            {"role": "user", "content": chapter_prompt}
+                        ]
+                    )
+                    
+                    if response and "choices" in response:
+                        chunk = response["choices"][0]["message"]["content"]
+                        if "<think>" in chunk:
+                            chunk = chunk.split("</think>")[-1].strip()
+                        
+                        if len(chunk) > 100:
+                            chapter_text = chunk
+                            break
+                    
+                    retry_count += 1
+                    time.sleep(2)
+                except Exception as e:
+                    logger.error(f"Error generating chapter {chapter_title}: {e}")
+                    retry_count += 1
+                    time.sleep(2)
+            
+            if chapter_text:
+                chapter_markdown = f"## {chapter_title}\n\n{chapter_text}\n\n"
+            else:
+                chapter_markdown = f"## {chapter_title}\n\n[Content missing for this section]\n\n"
+            
+            full_content += chapter_markdown
+            
+            # Incremental save to file
+            if filepath:
+                try:
+                    with open(filepath, "a", encoding="utf-8") as f:
+                        f.write(chapter_markdown)
+                    logger.info(f"Incrementally saved chapter {i} to {filepath}")
+                except Exception as e:
+                    logger.error(f"Failed to save chapter {i} to file: {e}")
+            
+        return full_content
+
+    def generate_conclusion(self, book_content):
+        """Generate a conclusion based on the book content"""
+        logger.info("Generating dynamic conclusion...")
+        
+        prompt = f"""
+        Here is the content of a book I just wrote:
+        
+        {book_content[:15000]} ... [truncated] ... {book_content[-5000:]}
+        
+        Please write a powerful, inspiring conclusion for this book.
+        summarize the key points and give the reader a final call to action.
+        Do not look like an AI. Write like a human author.
+        Match the tone of the book.
+        """
+        
+        try:
+            if not self.ai_client:
+                 raise Exception("OpenRouter client not initialized")
+
+            response = self.ai_client.create_chat_completion(
+                model="deepseek/deepseek-r1-0528:free",
+                messages=[
+                    {"role": "system", "content": "You are a professional book editor and closer."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            if response and "choices" in response:
+                conclusion = response["choices"][0]["message"]["content"]
+                # Clean think tags
+                if "<think>" in conclusion:
+                    conclusion = conclusion.split("</think>")[-1].strip()
+                return conclusion
+            return "Conclusion could not be generated."
+            
+        except Exception as e:
+            logger.error(f"Error generating conclusion: {e}")
+            return "Failed to generate conclusion."
+
     def create_ebook_markdown(self, niche):
         """Create complete ebook in markdown format"""
         
         details = self.niches[niche]
+        
+        # Check if we have chapters (legacy/niches.json mode)
+        if "chapters" in details:
+             return self._create_ebook_from_chapters(niche, details)
+        
+        # Determine filepath
+        filename = f"{sanitize_filename(niche)}_ebook.md"
+        filepath = self.output_dir / filename
+        
+        # New mode: Prompt only
         content = f"# {details['title']}\n\n"
-        content += f"*Generated on {datetime.now().strftime('%Y-%m-%d')}*\n\n"
-        content += "## Table of Contents\n\n"
+        
+        # Write header initially
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(content)
+        
+        # Generate the whole thing with incremental saving
+        generated_body = self.generate_book_directly(niche, filepath=filepath)
+        
+        # Return full content (legacy support)
+        return content + generated_body
+
+    def _create_ebook_from_chapters(self, niche, details):
+        content = f"# {details['title']}\n\n"
+        # Removed timestamp
         
         # Add table of contents
+        content += "## Table of Contents\n\n"
         for i, chapter in enumerate(details['chapters'], 1):
             content += f"{i}. {chapter}\n"
         
@@ -196,7 +312,8 @@ class EbookGenerator:
             logger.info(f"Generating chapter {i}/{len(details['chapters'])}: {chapter}")
             
             chapter_content = self.generate_chapter_content(niche, chapter)
-            content += f"# Chapter {i}: {chapter}\n\n{chapter_content}\n\n"
+            # Removed "Chapter X:" header, just content
+            content += f"## {chapter}\n\n{chapter_content}\n\n"
             
             # Add page break
             content += "\\newpage\n\n" if i < len(details['chapters']) else ""
@@ -204,15 +321,9 @@ class EbookGenerator:
             # Delay to avoid rate limiting
             time.sleep(2)
         
-        # Add conclusion
-        content += "# Conclusion\n\n"
-        content += "This ebook was created using AI as part of a 72-hour survival challenge. "
-        content += "Every purchase supports this experimental project to prove that with just a laptop and AI, "
-        content += "anyone can create value from nothing.\n\n"
-        content += "**Next Steps:**\n"
-        content += "1. Implement one chapter immediately\n"
-        content += "2. Join our free Telegram group for updates\n"
-        content += "3. Share your results for community support\n"
+        # Generate dynamic conclusion
+        conclusion = self.generate_conclusion(content)
+        content += f"\n\n# Conclusion\n\n{conclusion}"
         
         return content
     
@@ -238,8 +349,11 @@ class EbookGenerator:
         
         for niche in self.niches.keys():
             logger.info(f"Generating: {self.niches[niche]['title']}")
-            logger.info(f"Chapters: {len(self.niches[niche]['chapters'])}")
-            logger.info(f"Target: {self.niches[niche]['target']}")
+            target_audience = self.niches[niche].get('target', self.niches[niche].get('target_audience', 'General Audience'))
+            # Safe access for chapters
+            num_chapters = len(self.niches[niche].get('chapters', []))
+            logger.info(f"Chapters: {num_chapters} (or direct prompt)")
+            logger.info(f"Target: {target_audience}")
             
             content = self.create_ebook_markdown(niche)
             self.save_ebook(niche, content)
@@ -266,8 +380,10 @@ class EbookGenerator:
         for niche, details in self.niches.items():
             summary += f"## {details['title']}\n"
             summary += f"**Price:** ${details['price']}\n"
-            summary += f"**Target:** {details['target']}\n"
-            summary += f"**Chapters:** {len(details['chapters'])}\n"
+            target_audience = details.get('target', details.get('target_audience', 'General Audience'))
+            summary += f"**Target:** {target_audience}\n"
+            num_chapters = len(details.get('chapters', []))
+            summary += f"**Chapters:** {num_chapters} (or direct prompt)\n"
             summary += f"**File:** {niche}_ebook.md\n\n"
         
         summary += "## Usage Instructions\n"
@@ -285,7 +401,7 @@ class EbookGenerator:
     def get_stats(self):
         """Get statistics about generated content"""
         
-        total_chapters = sum(len(details['chapters']) for details in self.niches.values())
+        total_chapters = sum(len(details.get('chapters', [])) for details in self.niches.values())
         total_words_estimate = total_chapters * 1500  # Approximate
         
         return {
@@ -297,12 +413,39 @@ class EbookGenerator:
 
 # Main execution
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='AI Ebook Generator')
+    parser.add_argument('--phase', type=int, help='Phase number (1: Generate all + PDF)')
+    args = parser.parse_args()
+
     print("=" * 60)
     print("AI EBOOK GENERATOR - 72 HOUR CASH SYSTEM")
     print("=" * 60)
     
     generator = EbookGenerator()
+
+    if args.phase == 1:
+        print("\n🚀 EXECUTING PHASE 1: Generate All Ebooks + PDFs")
+        # 1. Generate Ebooks
+        generator.generate_all()
+
+        # 1.5 Generate Covers
+        print("\n🖼️ Starting Cover Generation...")
+        image_gen = ImageGenerator(output_dir=generator.output_dir)
+        try:
+            # We pass generator.niches because that now holds the loaded prompts/titles
+            image_gen.generate_all(niches=generator.niches, use_api=False) 
+        except Exception as e:
+            logger.error(f"Cover generation failed: {e}")
+        
+        # 2. Convert to PDF
+        print("\n📄 Starting PDF Conversion...")
+        pdf_converter = PDFConverter(output_dir=generator.output_dir)
+        pdf_converter.convert_all()
+        
+        print("\n✅ PHASE 1 COMPLETE")
+        sys.exit(0)
     
+    # Interactive mode (fallback)
     # Ask which niches to generate
     print("\nAvailable niches:")
     for i, niche in enumerate(generator.niches.keys(), 1):

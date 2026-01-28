@@ -98,11 +98,11 @@ class ImageGenerator:
             y_offset += 150
         
         # Add subtitle
-        subtitle = "AI-Powered System"
-        bbox = draw.textbbox((0, 0), subtitle, font=subtitle_font)
-        subtitle_width = bbox[2] - bbox[0]
-        x = (width - subtitle_width) // 2
-        draw.text((x, height - 300), subtitle, font=subtitle_font, fill='white')
+        # subtitle = "AI-Powered System"
+        # bbox = draw.textbbox((0, 0), subtitle, font=subtitle_font)
+        # subtitle_width = bbox[2] - bbox[0]
+        # x = (width - subtitle_width) // 2
+        # draw.text((x, height - 300), subtitle, font=subtitle_font, fill='white')
         
         # Add decorative line
         draw.rectangle([width // 4, height - 400, width * 3 // 4, height - 395], fill='white')

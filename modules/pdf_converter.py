@@ -85,16 +85,18 @@ class PDFConverter:
             spaceAfter=12
         )
         
-        # Add cover image if provided
-        if cover_image and os.path.exists(cover_image):
-            try:
-                img = RLImage(cover_image, width=4*inch, height=6*inch)
-                story.append(Spacer(1, 1*inch))
-                story.append(img)
-                story.append(PageBreak())
-            except Exception as e:
-                logger.warning(f"Could not add cover image: {e}")
-        
+        # Custom drawing for first page (Cover)
+        def add_cover(canvas, doc):
+            canvas.saveState()
+            if cover_image and os.path.exists(cover_image):
+                try:
+                    # Draw cover image filling the entire page
+                    page_width, page_height = letter
+                    canvas.drawImage(cover_image, 0, 0, width=page_width, height=page_height, preserveAspectRatio=True, anchor='c')
+                except Exception as e:
+                    logger.warning(f"Could not add cover image: {e}")
+            canvas.restoreState()
+
         # Process HTML content
         for element in soup.find_all(['h1', 'h2', 'h3', 'p', 'ul', 'ol']):
             if element.name == 'h1':
@@ -111,10 +113,29 @@ class PDFConverter:
                     bullet_text = f"• {li.get_text()}"
                     story.append(Paragraph(bullet_text, body_style))
                 story.append(Spacer(1, 0.1*inch))
-        
+
         # Build PDF
         try:
-            doc.build(story)
+            # We don't need to add the image to the story if we draw it on the canvas
+            # But we need a PageBreak to start the content on the next page? 
+            # Actually, `onFirstPage` is called for the first page of the story.
+            # If we want the cover to be its own page, we can just ensure the story starts with something that triggers a page, 
+            # or rely on the drawImage covering the background.
+            # BUT, SimpleDocTemplate flows content. If we just draw on background, content will go on top.
+            # We want the content to start on the NEXT page.
+            
+            # Strategy: Add a PageBreak at the start of the story.
+            # The FIRST page (page 1) will be empty of story content except the page break?
+            # No, if we start with PageBreak, page 1 might be skipped or empty.
+            # Let's try adding a Spacer that equals the page height?
+            
+            # Better approach:
+            # 1. story = [PageBreak()] -> This starts content on page 2.
+            # 2. onFirstPage draws the cover.
+            
+            story.insert(0, PageBreak())
+            
+            doc.build(story, onFirstPage=add_cover)
             logger.success(f"Created PDF: {output_pdf}")
             return output_pdf
         except Exception as e:

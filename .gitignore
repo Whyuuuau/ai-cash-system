@@ -119,3 +119,8 @@ node_modules/
 !requirements.txt
 !.env.example
 !.gitignore
+
+*copy
+*txt
+*venv
+*data/
